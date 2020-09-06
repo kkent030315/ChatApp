@@ -37,6 +37,10 @@ class ChatServiceCore
             return false;
         }
 
+        if (strlen($message) > 1024) {
+            return false;
+        }
+
         /* Insert the query */
         $queryString = "INSERT INTO `chats`
         (`sender`, `recipient`, `context`)
