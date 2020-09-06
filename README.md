@@ -104,4 +104,4 @@ $queryResult = $this->db->IssueQuery($queryString);
 
 # About The Security
 
-Secruty features are incomplete since this is not for public.
+Secruity features are incomplete since this is not for public.
