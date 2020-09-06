@@ -85,11 +85,11 @@ HTTP_HANDLER\RegisterHttpRequestHandler(HTTP_POST, 'configure', function () {
                 <form method="POST">
                     <div class="general column-style">
                         <label for="my_name" class="centering">自分の名前:</label>
-                        <input type="text" name="self_name" required>
+                        <input type="text" name="self_name" autocomplete="off" required>
                     </div>
                     <div class="general column-style">
                         <label for="my_name" class="centering">相手の名前:</label>
-                        <input type="text" name="recipient_name" required>
+                        <input type="text" name="recipient_name" autocomplete="off" required>
                     </div>
                     <button class="button-normal" name="configure">設定</button>
                     <button class="button-normal" name="reset" formnovalidate>リセット</button>
@@ -172,7 +172,7 @@ $readed = $row_chat[4] == 1;
                     <?php endif;?>
                 </div>
                 <form method="POST" class="column-style">
-                    <input type="text" name="message" class="mr12" placeholder="メッセージを入力" required <?php if (!$isServiceAvailable) {
+                    <input type="text" name="message" class="mr12" placeholder="メッセージを入力" autocomplete="off" required <?php if (!$isServiceAvailable) {
     echo ('disabled');
 }
 ?>>
