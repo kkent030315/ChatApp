@@ -111,12 +111,16 @@ HTTP_HANDLER\RegisterHttpRequestHandler(HTTP_POST, 'send_chat', function () {
 
     if (!is_string($message) || empty($message)) {
         EchoDOMError("無効なメッセージ");
+        header("Refresh:2");
+        die();
     }
 
     $service = unserialize($_SESSION['service']);
 
     if (!$service) {
         EchoDOMError("予期しないエラー");
+        header("Refresh:2");
+        die();
     }
 
     $service->SendChat($message);
