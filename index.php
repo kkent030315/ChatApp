@@ -4,6 +4,9 @@ require __DIR__ . '/service/session.php';
 require __DIR__ . '/service/http_handler.php';
 require __DIR__ . '/service/utils.php';
 
+/*
+ * Callback-receiver function that handles low-level fatal errors
+ */
 function errorCallbackReceiver()
 {
     echo ('
@@ -19,21 +22,35 @@ function errorCallbackReceiver()
     die();
 }
 
+/*
+ * Start session if not started yet
+ */
 SERVICE_SESSION\StartSessionIfNeeded();
 
+/*
+ * Flag for check if the session initialized with the service
+ * Type: bool
+ */
 $isServiceAvailable = isset($_SESSION['service']);
 
-if (isset($_SESSION['service'])) {
+if ($isServiceAvailable) {
+    /* if the session already initialized, restore the objects */
     $service = unserialize($_SESSION['service']);
 }
 
+/*
+ * Http Request Handler For Close Session
+ * Method: POST
+ */
 HTTP_HANDLER\RegisterHttpRequestHandler(HTTP_POST, 'reset', 'SERVICE_SESSION\DisposeSessionForcibly');
 
+/* Echo error label */
 function EchoDOMError($innerTEXT)
 {
     echo ("<div class=\"alert alert-danger\">$innerTEXT</div>");
 }
 
+/* Echo success label */
 function EchoDOMSuccess($innerTEXT)
 {
     echo ("<div class=\"alert alert-success\">$innerTEXT</div>");
@@ -59,6 +76,10 @@ function EchoDOMSuccess($innerTEXT)
             <div class="sector">
                 <p class="sector-header">基本設定</p>
 <?php
+/*
+ * Http Request Handler For Configure Sender And Recipient
+ * Method: POST
+ */
 HTTP_HANDLER\RegisterHttpRequestHandler(HTTP_POST, 'configure', function () {
     $selfName = filter_input(INPUT_POST, 'self_name');
     $recipientName = filter_input(INPUT_POST, 'recipient_name');
@@ -106,6 +127,10 @@ if ($isServiceAvailable) {
             <div class="sector">
                 <p class="sector-header">チャット<?php echo (" - $recipient"); ?></p>
 <?php
+/*
+ * Http Request Handler For Submitting Message
+ * Method: POST
+ */
 HTTP_HANDLER\RegisterHttpRequestHandler(HTTP_POST, 'send_chat', function () {
     $message = filter_input(INPUT_POST, 'message');
 
@@ -131,49 +156,59 @@ HTTP_HANDLER\RegisterHttpRequestHandler(HTTP_POST, 'send_chat', function () {
                 <div class="chat-container" id="scrollable">
 
                 <?php if ($isServiceAvailable): ?>
-                    <?php $cache = "";?>
+                    <?php $cacheSender = ""; /* Cache last-sender */?>
                     <?php foreach ($service->GetChats() as $row_chat): ?>
-                    <?php
-$time = datetime_format($row_chat[3], 'H:i');
+<?php
+/* Formatted time string 00:00 */
+$messageTime = datetime_format($row_chat[3], 'H:i');
+/* is the message got readed or not, Type: bool */
 $readed = $row_chat[4] == 1;
+/* Message context */
+$messageContext = $row_chat[2];
+/* Sender of the message */
+$messageSender = $row_chat[0];
+/* if the message sender/recipient is same as before, hidden the profile image */
+$shouldHiddenProfileIcon = $messageSender === $cacheSender;
+/* if the message recipient is myself, show the message on right */
+$isMessageSentByMyself = $recipient !== $messageSender;
 ?>
-                    <?php if ($recipient !== $row_chat[0]): ?>
+                    <?php if ($isMessageSentByMyself): ?>
 
                     <div class="row-chat right column-style">
                         <div class="row-style mr0">
                             <div class="item-chat chat-on-right">
-                                <p><?php echo $row_chat[2] ?></p>
+                                <p><?php echo $messageContext/* Message context */ ?></p>
                             </div>
                             <p class="detail"><?php if ($readed) {
     echo ('既読');
 }
-?> <?php echo $time; ?></p>
+?> <?php echo $messageTime; ?></p>
                         </div>
-                        <img src="assets/img/user.png" <?php if ($row_chat[0] === $cache) {
+                        <img src="assets/img/user.png" <?php if ($shouldHiddenProfileIcon) {
     echo ('style="visibility: hidden;"');
 }
 ?>>
                     </div>
 
-                    <?php else: ?>
+                    <?php else: /* if ($isMessageSentByMyself) */?>
 
-                    <div class="row-chat column-style">
-                        <img src="assets/img/user.png" <?php if ($row_chat[0] === $cache) {
-    echo ('style="visibility: hidden;"');
-}
-?>>
-                        <div class="row-style mr0">
-                            <div class="item-chat chat-on-left">
-                                <p><?php echo $row_chat[2] ?></p>
-                            </div>
-                            <p class="detail"><?php echo $time; ?></p>
-                        </div>
-                    </div>
+	                    <div class="row-chat column-style">
+	                        <img src="assets/img/user.png" <?php if ($shouldHiddenProfileIcon) {
+        echo ('style="visibility: hidden;"');
+    }
+    ?>>
+	                        <div class="row-style mr0">
+	                            <div class="item-chat chat-on-left">
+	                                <p><?php echo $messageContext/* Message context */ ?></p>
+	                            </div>
+	                            <p class="detail"><?php echo $messageTime; ?></p>
+	                        </div>
+	                    </div>
 
-                    <?php endif;?>
-                    <?php $cache = $row_chat[0];?>
-                    <?php endforeach;?>
-                    <?php endif;?>
+	                    <?php endif; /* if ($isMessageSentByMyself) */?>
+                    <?php $cacheSender = $messageSender; /* Update cache */?>
+                    <?php endforeach; /* foreach ($service->GetChats() as $row_chat): */?>
+                    <?php endif; /* if ($isServiceAvailable): */?>
                 </div>
                 <form method="POST" class="column-style">
                     <input type="text" name="message" class="mr12" placeholder="メッセージを入力" autocomplete="off" required <?php if (!$isServiceAvailable) {
@@ -188,6 +223,7 @@ $readed = $row_chat[4] == 1;
      </div>
 
      <script>
+        // chat area should be starts scrolling from bottom
         var chat_container = document.getElementById('scrollable');
         chat_container.scrollIntoView(false);
      </script>
